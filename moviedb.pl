@@ -23,12 +23,13 @@ if ($res->is_success) {
 	while (my $line = <$fh>) {
 		chomp $line;
 		#<p><a href="/person/138-quentin-tarantino">Quentin Tarantino</a></p>
-		if ($line =~/^\s*<p><a href="[^"]*">(.+)<\/a><\/p>\s*$/){
-			my $person = $1;
+		if ($line =~/^\s*<p><a href="([^"]*)">(.+)<\/a><\/p>\s*$/){
+			my ($link, $person) = ($1, $2);
 			<$fh>;<$fh>; # skip 2 lines
 			$line = <$fh>;
 			if ($line =~ /^\s*Director\s*\n$/) {
-				print "$person\n";
+				my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)$/);
+				print "$person : $id ($link)\n";
 				last;
 			}
 		}
@@ -38,5 +39,4 @@ if ($res->is_success) {
 else {
 	print 'Failed getting movie "'.$movieDB.$movieID.'/cast" : '.$res->status_line."\n";
 }
-
 exit 0;
