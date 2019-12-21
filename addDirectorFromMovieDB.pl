@@ -64,7 +64,7 @@ sub getDirectorFromMovieDB()
 				<$fh>;<$fh>; # skip 2 lines
 				$line = <$fh>;
 				if ($line =~ /^\s*Director\s*\n$/) {
-					my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)$/);
+					my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)?$/);
 #					print "$person : $id ($link)\n";
 					$director->{name} = $person;
 					$director->{id}   = $id;
