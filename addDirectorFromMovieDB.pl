@@ -5,6 +5,7 @@
 use strict;
 use LWP::UserAgent;
 use DBI;
+use utf8;
 use vars qw/%DB %SQL $movieDB $ua/;
 
 %DB = ( host => 'localhost', port => 3306, user => 'MY_USER', pass => 'MY_PASS', db => 'MY_DB');
@@ -18,7 +19,8 @@ $movieDB = 'https://www.themoviedb.org/movie/';
 
 $ua = LWP::UserAgent->new;
 
-my $dbh = DBI->connect("dbi:mysql:database=$DB{db};host=$DB{host}", $DB{user}, $DB{pass}, {AutoCommit=>1,RaiseError=>1,PrintError=>0}) or die "Can't connect to the Database...\n";
+my $dbh = DBI->connect("dbi:mysql:database=$DB{db};host=$DB{host}", $DB{user}, $DB{pass}, 
+	{AutoCommit=>1, RaiseError=>1, PrintError=>0, mysql_enable_utf8 => 1} ) or die "Can't connect to the Database...\n";
 
 #print "req: $SQL{getMoviesIDs}\n";
 my $sth_movies = $dbh->prepare($SQL{getMoviesIDs});
@@ -33,8 +35,10 @@ for (my $i=0; $i<$nbMovies; ++$i){
 	&getDirectorFromMovieDB($tmdbid, \%director);
 	if (defined($director{name}))
 	{
+#		$director{name} =~ tr/ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ/aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn/;
 #		print "Director: $director{name}, id: $director{id}\n";
 		my $realisateur = '{"id":'.$director{id}.',"name":"'.$director{name}.'"}';
+		utf8::encode($realisateur);
 		$sth_update->execute($realisateur, $tmdbid);
 	}
 }
@@ -58,6 +62,7 @@ sub getDirectorFromMovieDB()
 
 		while (my $line = <$fh>) {
 			chomp $line;
+			utf8::decode($line);
 			#<p><a href="/person/138-quentin-tarantino">Quentin Tarantino</a></p>
 			if ($line =~/^\s*<p><a href="([^"]*)">(.+)<\/a><\/p>\s*$/){
 				my ($link, $person) = ($1, $2);
