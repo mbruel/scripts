@@ -38,7 +38,7 @@ for (my $i=0; $i<$nbMovies; ++$i){
 	my %director;
 	if ($debug) {
 		my $num = $i + 1;
-		print "[$num/$nbMovies] Processing $res->{title} (id: $tmdbid)\n";
+		print "[$num/$nbMovies] Processing $res->{title} (id: $res->{id}, tmdbid: $tmdbid)\n";
 	}
 	&getDirectorFromMovieDB($tmdbid, \%director);
 	if (defined($director{name}))
