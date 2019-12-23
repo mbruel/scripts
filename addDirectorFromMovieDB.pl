@@ -46,7 +46,7 @@ for (my $i=0; $i<$nbMovies; ++$i){
 #		$director{name} =~ tr/ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ/aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn/;
 		print "\t -> Director found: $director{name}, id: $director{id}\n" if ($debug);
 		my $realisateur = '{"id":'.$director{id}.',"name":"'.$director{name}.'"}';
-		utf8::encode($realisateur);
+		utf8::encode($realisateur) if (!utf8::valid($realisateur));
 		$sth_update->execute($realisateur, $tmdbid) || print "ERROR updating DB...\n";
 	}
 	sleep($sleep) if ($sleep > 0);
@@ -64,7 +64,7 @@ sub getDirectorFromMovieDB()
 	my $req = HTTP::Request->new(GET => $movieDB.$movieID.'/cast');
 	my $res = $ua->request($req);
 	if ($res->is_success) {
-		open my $fh, '<', \$res->content or die $!;
+		open my $fh, '<:encoding(UTF-8)', \$res->content or die $!;
 
 		my $line; # arrive to the director section '<h4>Directing</h4>'
 		do { $line = <$fh>; } while ($line && $line !~ /^\s*<h4>Directing<\/h4>\s*/);
@@ -73,7 +73,7 @@ sub getDirectorFromMovieDB()
 		{
 			while (my $line = <$fh>) {
 				chomp $line;
-				utf8::decode($line);
+#				utf8::decode($line);
 				#<p><a href="/person/138-quentin-tarantino">Quentin Tarantino</a></p>
 				if ($line =~/^\s*<p><a href="([^"]*)">(.+)<\/a><\/p>\s*$/){
 					my ($link, $person) = ($1, $2);
