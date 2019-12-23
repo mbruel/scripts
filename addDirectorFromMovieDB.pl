@@ -10,7 +10,7 @@ use vars qw/%DB %SQL $movieDB $ua $debug $sleep $idStart/;
 
 $idStart = 0;
 $debug   = 1;
-$sleep   = 5;
+$sleep   = 2;
 
 %DB = ( host => 'localhost', port => 3306, user => 'MY_USER', pass => 'MY_PASS', db => 'MY_DB');
 %SQL = (
@@ -67,24 +67,30 @@ sub getDirectorFromMovieDB()
 		open my $fh, '<', \$res->content or die $!;
 
 		my $line; # arrive to the director section '<h4>Directing</h4>'
-		do { $line = <$fh>; } while ($line !~ /^\s*<h4>Directing<\/h4>\s*/);
+		do { $line = <$fh>; } while ($line && $line !~ /^\s*<h4>Directing<\/h4>\s*/);
 
-		while (my $line = <$fh>) {
-			chomp $line;
-			utf8::decode($line);
-			#<p><a href="/person/138-quentin-tarantino">Quentin Tarantino</a></p>
-			if ($line =~/^\s*<p><a href="([^"]*)">(.+)<\/a><\/p>\s*$/){
-				my ($link, $person) = ($1, $2);
-				<$fh>;<$fh>; # skip 2 lines
-				$line = <$fh>;
-				if ($line =~ /^\s*Director\s*\n$/) {
-					my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)?$/);
-#					print "$person : $id ($link)\n";
-					$director->{name} = $person;
-					$director->{id}   = $id;
-					last;
+		if ($line)
+		{
+			while (my $line = <$fh>) {
+				chomp $line;
+				utf8::decode($line);
+				#<p><a href="/person/138-quentin-tarantino">Quentin Tarantino</a></p>
+				if ($line =~/^\s*<p><a href="([^"]*)">(.+)<\/a><\/p>\s*$/){
+					my ($link, $person) = ($1, $2);
+					<$fh>;<$fh>; # skip 2 lines
+					$line = <$fh>;
+					if ($line =~ /^\s*Director\s*\n$/) {
+						my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)?$/);
+#						print "$person : $id ($link)\n";
+						$director->{name} = $person;
+						$director->{id}   = $id;
+						last;
+					}
 				}
 			}
+		}
+		elsif ($debug) {
+			print "\tNO_UPDATE: Couldn't find the director...\n";
 		}
 		close $fh or die $!;
 		return 1;
