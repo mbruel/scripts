@@ -6,14 +6,15 @@ use strict;
 use LWP::UserAgent;
 use DBI;
 use utf8;
-use vars qw/%DB %SQL $movieDB $ua $debug $sleep/;
+use vars qw/%DB %SQL $movieDB $ua $debug $sleep $idStart/;
 
-$debug = 1;
-$sleep = 5;
+$idStart = 0;
+$debug   = 1;
+$sleep   = 5;
 
 %DB = ( host => 'localhost', port => 3306, user => 'MY_USER', pass => 'MY_PASS', db => 'MY_DB');
 %SQL = (
-	getMoviesIDs   => 'select tmdbid, title from site_tmdb where type = "MOVIE";',
+	getMoviesIDs   => "select id, tmdbid, title from site_tmdb where type = \"MOVIE\"  and id > $idStart order by id;",
 	updateDirector => 'update site_tmdb set realisateur=? where tmdbid=?;'
 );
 
