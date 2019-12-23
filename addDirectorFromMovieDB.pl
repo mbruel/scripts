@@ -6,11 +6,14 @@ use strict;
 use LWP::UserAgent;
 use DBI;
 use utf8;
-use vars qw/%DB %SQL $movieDB $ua/;
+use vars qw/%DB %SQL $movieDB $ua $debug $sleep/;
+
+$debug = 1;
+$sleep = 5;
 
 %DB = ( host => 'localhost', port => 3306, user => 'MY_USER', pass => 'MY_PASS', db => 'MY_DB');
 %SQL = (
-	getMoviesIDs   => 'select tmdbid from site_tmdb where type = "MOVIE";',
+	getMoviesIDs   => 'select tmdbid, title from site_tmdb where type = "MOVIE";',
 	updateDirector => 'update site_tmdb set realisateur=? where tmdbid=?;'
 );
 
@@ -27,20 +30,25 @@ my $sth_movies = $dbh->prepare($SQL{getMoviesIDs});
 my $sth_update = $dbh->prepare($SQL{updateDirector});
 $sth_movies->execute();
 my $nbMovies = $sth_movies->rows;
-print "Number of movies $nbMovies\n";
+print "Number of movies to process: $nbMovies\n";
 for (my $i=0; $i<$nbMovies; ++$i){
 	my $res     = $sth_movies->fetchrow_hashref();
 	my $tmdbid  = $res->{tmdbid};
 	my %director;
+	if ($debug) {
+		my $num = $i + 1;
+		print "[$num/$nbMovies] Processing $res->{title} (id: $tmdbid)\n";
+	}
 	&getDirectorFromMovieDB($tmdbid, \%director);
 	if (defined($director{name}))
 	{
 #		$director{name} =~ tr/ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ/aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn/;
-#		print "Director: $director{name}, id: $director{id}\n";
+		print "\t -> Director found: $director{name}, id: $director{id}\n" if ($debug);
 		my $realisateur = '{"id":'.$director{id}.',"name":"'.$director{name}.'"}';
 		utf8::encode($realisateur);
-		$sth_update->execute($realisateur, $tmdbid);
+		$sth_update->execute($realisateur, $tmdbid) || print "ERROR updating DB...\n";
 	}
+	sleep($sleep) if ($sleep > 0);
 }
 $sth_update->finish();
 $sth_movies->finish();
@@ -78,8 +86,10 @@ sub getDirectorFromMovieDB()
 			}
 		}
 		close $fh or die $!;
+		return 1;
 	}
 	else {
 		print 'Failed getting movie "'.$movieDB.$movieID.'/cast" : '.$res->status_line."\n";
+		return 0;
 	}
 }
