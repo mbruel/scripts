@@ -6,7 +6,18 @@ use strict;
 use LWP::UserAgent;
 use DBI;
 use utf8;
-use vars qw/%DB %SQL $movieDB $ua $debug $sleep $idStart/;
+use vars qw/%DB %SQL $movieDB $ua $debug $sleep $idStart $useTOR/;
+
+$useTOR  = 1;
+if ($useTOR){
+	use LWP::Protocol::socks; # make sure the module is installed...
+	#if not:
+	# perl -MCPAN -e shell
+	# install LWP::Protocol::socks
+	#
+	# or on windows: cpanm LWP::Protocol::socks
+}
+
 
 $idStart = 0;
 $debug   = 1;
@@ -22,6 +33,7 @@ $movieDB = 'https://www.themoviedb.org/movie/';
 
 
 $ua = LWP::UserAgent->new;
+$ua->proxy([qw/ http https /] => 'socks://localhost:9050') if ($useTOR); # Tor proxy
 
 my $dbh = DBI->connect("dbi:mysql:database=$DB{db};host=$DB{host};port=$DB{port}", $DB{user}, $DB{pass},
 	{AutoCommit=>1, RaiseError=>1, PrintError=>0, mysql_enable_utf8 => 1} ) or die "Can't connect to the Database...\n";
