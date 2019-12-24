@@ -35,17 +35,23 @@ print "Number of movies to process: $nbMovies\n";
 for (my $i=0; $i<$nbMovies; ++$i){
 	my $res     = $sth_movies->fetchrow_hashref();
 	my $tmdbid  = $res->{tmdbid};
-	my %director;
+	my @directors;
 	if ($debug) {
 		my $num = $i + 1;
 		print "[$num/$nbMovies] Processing $res->{title} (id: $res->{id}, tmdbid: $tmdbid)\n";
 	}
-	&getDirectorFromMovieDB($tmdbid, \%director);
-	if (defined($director{name}))
+	&getDirectorFromMovieDB($tmdbid, \@directors);
+	if ($#directors != -1)
 	{
-#		$director{name} =~ tr/ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ/aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn/;
-		print "\t -> Director found: $director{name}, id: $director{id}\n" if ($debug);
-		my $realisateur = '{"id":'.$director{id}.',"name":"'.$director{name}.'"}';
+		my $realisateur = '[';
+		for my $director (@directors)
+		{
+#			$director->{name} =~ tr/ÀÁÂÃÄÅàáâãäåÒÓÔÕÖØòóôõöøÈÉÊËèéêëÇçÌÍÎÏìíîïÙÚÛÜùúûüÿÑñ/aaaaaaaaaaaaooooooooooooeeeeeeeecciiiiiiiiuuuuuuuuynn/;
+			print "\t -> Director found: $director->{name}, id: $director->{id}\n" if ($debug);
+			$realisateur .= '{"id":'.$director->{id}.',"name":"'.$director->{name}.'"},';
+		}
+		chop($realisateur); # remove last coma
+		$realisateur .= ']';
 		utf8::encode($realisateur) if (!utf8::valid($realisateur));
 		$sth_update->execute($realisateur, $tmdbid) || print "ERROR updating DB...\n";
 	}
@@ -59,7 +65,7 @@ exit 0;
 
 sub getDirectorFromMovieDB()
 {
-	my ($movieID, $director) = @_;
+	my ($movieID, $directors) = @_;
 
 	my $req = HTTP::Request->new(GET => $movieDB.$movieID.'/cast');
 	my $res = $ua->request($req);
@@ -82,10 +88,9 @@ sub getDirectorFromMovieDB()
 					if ($line =~ /^\s*Director(,.*)?\s*\n$/) {
 						my $id = $1 if ($link =~/^\/person\/(\d+)(-.*)?$/);
 #						print "$person : $id ($link)\n";
-						$director->{name} = $person;
-						$director->{id}   = $id;
+						push(@$directors, {name => $person, id => $id});
 						$directorFound    = 1;
-						last;
+#						last;
 					}
 				}
 			}
