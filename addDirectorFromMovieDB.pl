@@ -23,7 +23,7 @@ $movieDB = 'https://www.themoviedb.org/movie/';
 
 $ua = LWP::UserAgent->new;
 
-my $dbh = DBI->connect("dbi:mysql:database=$DB{db};host=$DB{host}", $DB{user}, $DB{pass}, 
+my $dbh = DBI->connect("dbi:mysql:database=$DB{db};host=$DB{host};port=$DB{port}", $DB{user}, $DB{pass},
 	{AutoCommit=>1, RaiseError=>1, PrintError=>0, mysql_enable_utf8 => 1} ) or die "Can't connect to the Database...\n";
 
 #print "req: $SQL{getMoviesIDs}\n";
