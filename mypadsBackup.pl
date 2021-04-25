@@ -10,9 +10,10 @@ use Data::Dumper;
 use vars qw/
 %htaccess %myPads
 $curl $dstPath
+$format %exportTag
 $debug
 /;
-
+$format = 'md';
 %htaccess = (login => 'htaccessUSER', pass => 'htaccessPASS');
 %myPads = (login => 'mypadsLOGIN', pass => 'mypadsPASS', url => 'https://mypads.myserver.fr/',
 	pads => ['myPad-someID1', 'myPad2-someID2', 'myPad3-someID3']
@@ -21,7 +22,13 @@ $dstPath = '/tmp/pads';
 $curl = '/usr/bin/curl';
 $debug = 1;
 
-print "Pad export to $dstPath from $myPads{url} using login: $myPads{login}\n";
+%exportTag = (txt => 'txt', md => 'markdown', html => 'html', etherpad => 'etherpad');
+if (!exists($exportTag{$format})){
+	print "Error on the export format...\n";
+	exit 2;
+}
+
+print "Pad export (in $format) to $dstPath from $myPads{url} using login: $myPads{login}\n";
 
 #curl --basic --user htaccessUSER:htaccessPASS -X POST -H "Content-Type: application/json"  -d '{"login":"mypadsLOGIN","password":"mypadsPASS"}'  https://mypads.myserver.fr/mypads/api/auth/login
 my $cmd = "$curl --silent";
@@ -45,8 +52,8 @@ elsif ($debug){
 foreach my $pad (@{$myPads{pads}}){
 	$cmd = "$curl --silent";
 	$cmd .= " --basic --user $htaccess{login}:$htaccess{pass}" if (exists($htaccess{login}));
-	$cmd .= " $myPads{url}p/$pad/export/txt?auth_token=$json->{token}";
-	$cmd .= " > $dstPath/$pad.txt";
+	$cmd .= " $myPads{url}p/$pad/export/$exportTag{$format}?auth_token=$json->{token}";
+	$cmd .= " > $dstPath/$pad.$format";
 
 	system($cmd);
 	if ($? == 0) {
