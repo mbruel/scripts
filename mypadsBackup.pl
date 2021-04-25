@@ -1,9 +1,9 @@
+#!/usr/bin/perl
 ###########################################################################
 # Export Pads from etherpads mypads plugin                                #
 #                                                                         #
 # cf https://framagit.org/framasoft/Etherpad/ep_mypads/-/issues/249       #
 ###########################################################################
-#!/usr/bin/perl
 use strict;
 use JSON;
 use Data::Dumper;
