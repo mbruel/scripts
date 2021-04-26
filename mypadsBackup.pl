@@ -11,21 +11,33 @@ use vars qw/
 %htaccess %myPads
 $curl $dstPath
 $format %exportTag
-$debug
+$debug $commit
 /;
 $format = 'md';
 %htaccess = (login => 'htaccessUSER', pass => 'htaccessPASS');
 %myPads = (login => 'mypadsLOGIN', pass => 'mypadsPASS', url => 'https://mypads.myserver.fr/',
 	pads => ['myPad-someID1', 'myPad2-someID2', 'myPad3-someID3']
 );
-$dstPath = '/tmp/pads';
+$dstPath = '/svn/mypads';
 $curl = '/usr/bin/curl';
-$debug = 1;
+$commit = 1;
+$debug = 0;
 
 %exportTag = (txt => 'txt', md => 'markdown', html => 'html', etherpad => 'etherpad');
 if (!exists($exportTag{$format})){
-	print "Error on the export format...\n";
+	print "Error: wrong export format...\n";
 	exit 2;
+}
+
+if (! -e $curl) {
+	print "Error: $curl is not available on the system...\n";
+	exit 3;
+}
+
+
+if (! -d $dstPath){
+	print "Error: the destination folder '$dstPath' doesn't exist...\n";
+	exit 4;
 }
 
 print "Pad export (in $format) to $dstPath from $myPads{url} using login: $myPads{login}\n";
@@ -63,6 +75,11 @@ foreach my $pad (@{$myPads{pads}}){
 	} else {
 		print "ERROR exporting pad $pad with cmd $cmd..\n";
 	}
+}
+
+if ($commit){
+	chdir($dstPath);
+	system('svn commit -m "Automatic backup"');
 }
 
 exit 0;
